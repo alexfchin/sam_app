@@ -2,9 +2,12 @@ from flask import Flask, request, url_for, redirect, render_template
 from gcal import createEvent
 from twilio.twiml.messaging_response import Message, MessagingResponse
 import models
+import datetime
+import json #used to convert dictionary object to json for calendar creation
 from flask_sqlalchemy_core import FlaskSQLAlchemy
 app = Flask(__name__)
 
+CURRENT_DATE = datetime.datetime.today().date()
 
 @app.route("/", methods=['GET', 'POST'])
 def index():

@@ -5,6 +5,10 @@ import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import json
+import settings
+
+from datetime import datetime, timedelta
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -33,20 +37,37 @@ def main():
             pickle.dump(creds, token)
 
     service = build('calendar', 'v3', credentials=creds)
+    GMT_OFF = '-04:00'
+    event = {
+        'summary': 'Dinner with friends',
+        'description': None,
+        'start': {
+            'dateTime':'2019-04-10T19:00:00',
+            'timeZone': 'America/New_York',},
+        'end': {
+            'dateTime': '2019-04-10T20:00:00',
+            'timeZone': 'America/New_York',
+        }
+    }
 
-    # Call the Calendar API
-    now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-    print('Getting the upcoming 10 events')
-    events_result = service.events().list(calendarId='primary', timeMin=now,
-                                        maxResults=10, singleEvents=True,
-                                        orderBy='startTime').execute()
-    events = events_result.get('items', [])
-
-    if not events:
-        print('No upcoming events found.')
-    for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        print(start, event['summary'])
-
+    #
+    # event = service.events().insert(calendarId='primary', body=event).execute()
+    # #
+    # print('Event created: %s' % event.get('htmlLink'))
+    #
+    dt = datetime.now()
+    td = timedelta(days=4)
+    # your calculated date
+    print(td)
+    print(type(td))
+    my_date = dt + td
+    print(str(my_date.date()))
+    print(type(my_date))
 if __name__ == '__main__':
     main()
+
+# import json
+#
+# data = {}
+# data['key'] = 'value'
+# json_data = json.dumps(data)
