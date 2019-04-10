@@ -1,13 +1,11 @@
 from flask import Flask, request, url_for, redirect, render_template
-from gcal import createEvent
+from gcal import addEvent
 from twilio.twiml.messaging_response import Message, MessagingResponse
 import models
-import datetime
+import settings
 import json #used to convert dictionary object to json for calendar creation
-from flask_sqlalchemy_core import FlaskSQLAlchemy
 app = Flask(__name__)
 
-CURRENT_DATE = datetime.datetime.today().date()
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -23,36 +21,71 @@ def calendar():
         createEvent()
     return render_template('calendar.html')
 
-@app.route("/createEvent", methods=['POST'])
+#TODO: handle tomorrow and today
+@app.route("/sms", methods=['GET','POST'])
 def createEvent():
-    messageResponse = MessagingResponse()
-    textBody = str(request.values.get('Body', None))
-    eventName = ''
-    eventTime = ''
-    #handle today, tomorrow
-
-    messageResponse.message("OK, I've created an event: " + eventName + " for " + eventTime)
-
-@app.route("/sms", methods=['GET', 'POST'])
-def sms():
-    """Respond to incoming messages with a friendly SMS."""
-    # Start our response
-    # The text to translate
-    # The target language
-
     resp = MessagingResponse()
-    text = str(request.values.get('Body', None))
-    print(text)
+    dayIndex = None
+    textBody = str(request.values.get('Body', None)).split()
 
-    # print(u'Text: {}'.format(text))
-    # print(u'Translation: {}'.format(translation['translatedText']))
+    if not textBody: return "ERROR"
 
-    # doctor, clinic
+    for i in range(len(textBody)):
+        if textBody[i].lower() in settings.DAY_OF_WEEK:
+            dayIndex = i
+            break
 
-    if 'hello' in text:
-        resp.message("You need a doctor")
-    # Add a message
+    summary = ' '.join(textBody[:dayIndex])
+    day = textBody[dayIndex]
+    eventTime = textBody[dayIndex+1].split('-') #TODO make times flexible
+    start,end = eventTime[0],eventTime[1]
+
+    e = models.CalEvent()
+    e.setSummary(summary)
+    e.setTime(day,start,end)
+    addEvent(e.event)
+    print("OK, I've created an event: " + summary + " for " + day + " "+ start + ' to ' + end + '.')
+    resp.message("OK, I've created an event: " + summary + " for " + day + " "+ start + ' to ' + end + '.')
     return str(resp)
 
+@app.route("/testPoint", methods=['POST'])
+def testPoint():
+
+    textBody = str(request.get_data()).split()
+    print(textBody)
+    if not textBody:
+        return
+
+    dayIndex = None
+
+    for i in range(len(textBody)):
+        if textBody[i].lower() in settings.DAY_OF_WEEK:
+            dayIndex = i
+            break
+
+    summary = ' '.join(textBody[:dayIndex])
+    day = textBody[dayIndex]
+    eventTime = textBody[dayIndex+1].split('-')
+    start,end = eventTime[0],eventTime[1]
+
+    e = models.CalEvent()
+    e.setSummary(summary)
+    e.setTime(day,start,end)
+    addEvent(e.event)
+    print("OK, I've created an event: " + summary + " for " + day + " "+ start + ' to ' + end + '.')
+    return "OK"
+
+@app.route("/sms_test", methods=['GET', 'POST'])
+def sms_reply():
+    """Respond to incoming calls with a MMS message."""
+    # Start our TwiML response
+    resp = MessagingResponse()
+    textBody = str(request.values.get('Body', None)).split()
+    print(textBody)
+    # Add a text message
+    msg = resp.message("The Robots are coming! Head for the hills!")
+
+    # Add a picture message
+    return 'ok'
 if __name__ == "__main__":
     app.run()

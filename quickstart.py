@@ -6,9 +6,6 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import json
-import settings
-
-from datetime import datetime, timedelta
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -50,19 +47,13 @@ def main():
         }
     }
 
+
+    event = service.events().insert(calendarId='primary', body=event).execute()
     #
-    # event = service.events().insert(calendarId='primary', body=event).execute()
-    # #
-    # print('Event created: %s' % event.get('htmlLink'))
-    #
-    dt = datetime.now()
-    td = timedelta(days=4)
-    # your calculated date
-    print(td)
-    print(type(td))
-    my_date = dt + td
-    print(str(my_date.date()))
-    print(type(my_date))
+    print('Event created: %s' % event.get('htmlLink'))
+
+
+
 if __name__ == '__main__':
     main()
 

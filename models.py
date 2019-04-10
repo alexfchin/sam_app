@@ -1,5 +1,6 @@
 import settings
 from datetime import timedelta
+import re
 class User(object):
     def __init__(self, username, email, phone):
         self.username = username
@@ -19,10 +20,7 @@ class CalEvent(object):
             'end': {
                 'dateTime': None,
                 'timeZone': timeZone,
-            },
-            'attendees': [
-                {'email': None}
-            ]
+            }
         }
     def setSummary(self, text):
         self.event['summary'] = text
@@ -35,42 +33,39 @@ class CalEvent(object):
         start = date + "T" + start
         end = date + "T" + end
 
-        self.event['start'['dateTime']] = start
-        self.event['end'['dateTime']] = end
+        self.event['start']['dateTime'] = start
+        self.event['end']['dateTime'] = end
 
     def findDate(self,day): #accounts for weekday in english
         day = day.lower()
-        weekday = -1
-        if day == 'monday':
-            weekday = 0
-        elif day == 'tuesday':
-            weekday = 1
-        elif day == 'wednesday':
-            weekday = 2
-        elif day == 'thursday':
-            weekday = 3
-        elif day == 'friday':
-            weekday = 4
-        elif day == 'saturday':
-            weekday = 5
-        elif day == 'sunday':
-            weekday = 6
-        if weekday == -1:
-            return "ERROR: INVALID DAY"
+        weekday = settings.DAY_OF_WEEK.index(day)
 
         dayOffset = 0
         if weekday == settings.CURRENT_DAY:
             dayOffset = 7
         elif weekday < settings.CURRENT_DAY:
-            dayOffset = weekday - settings.CURRENT_DAY
+            dayOffset = weekday+(7-settings.CURRENT_DAY)
         elif weekday > settings.CURRENT_DAY:
-            dayOffset = 7 + weekday
+            dayOffset = weekday - settings.CURRENT_DAY
 
-        date = settings.CURRENT_DATE - timedelta(days=dayOffset)
-        date = date.date()
+        print(dayOffset)
+        date = settings.CURRENT_DATE + timedelta(days=dayOffset)
+        print(date)
         return str(date)
     def convertTo24(self, time):
+        time = time.lower()
+        pm = False
+        if 'pm' in time:
+            pm = True
+
         time = time.replace(':', ' ').split()
+        for i in range(len(time)):
+            time[i] = re.sub("[^0-9]", "", time[i])
+
+        print(time)
+
+        hour,minute = '00','00'
+
         if len(time) > 1:
             hour, minute = time[0], time[1][:2]
         else:
@@ -79,9 +74,8 @@ class CalEvent(object):
             else:
                 hour = time[0]
 
-        if len(time) == 3: #check PM
-            if time[2].lower() == 'pm' and hour != '12':
-                hour = str(int(hour) + 12)
+        if pm and hour != '12':
+            hour = str(int(hour) + 12)
         formatted = hour + ":" + minute + ":00"
         return formatted
 
